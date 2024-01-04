@@ -4,6 +4,7 @@ import (
     "fmt"
 	"github.com/gocolly/colly"
 	"strconv"
+    "strings"
 	"time"
 )
 
@@ -24,9 +25,12 @@ func main () {
     var data []AvalancheData
 
     c.OnHTML(".entry", func(e *colly.HTMLElement) {
+        text := strings.ToLower(e.ChildText(".entry_body"))
+        englishStart := strings.Index(text, "mountain")
+        englishEnd := strings.Index(text, "tweet")
         data = append(data, AvalancheData {
             Date: e.ChildText(".entry_date"),
-            Text: e.ChildText(".entry_body"),
+            Text: text[englishStart:englishEnd],
         })
     })
 
@@ -38,7 +42,6 @@ func main () {
             fmt.Println(err)
         }
     }
-
 }
 
 func amountOfDaysSince(date int) int {

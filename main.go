@@ -7,32 +7,33 @@ import (
     "strings"
 	"time"
     "github.com/gookit/config/v2"
+    // "net/http"
 )
 
-type AvalancheData struct {
-    Date string
-    Text string
+type Gptrequest struct {
+    Prompt string
+    Data string
 }
 
 func main () {
     fmt.Println("AvalancheScraper V0.1")
 
-    days := amountOfDaysSince(28)
+    err := config.LoadFiles("config.json")
+    if err != nil {
+        fmt.Println(err)
+    }
+    days := amountOfDaysSince(config.Int("days"))
+    baseUrl := config.String("baseUrl")
 
     c := colly.NewCollector()
 
-    baseUrl := "http://niseko.nadare.info/?page="
-
-    var data []AvalancheData
+    var data string
 
     c.OnHTML(".entry", func(e *colly.HTMLElement) {
         text := strings.ToLower(e.ChildText(".entry_body"))
         englishStart := strings.Index(text, "mountain")
         englishEnd := strings.Index(text, "tweet")
-        data = append(data, AvalancheData {
-            Date: e.ChildText(".entry_date"),
-            Text: text[englishStart:englishEnd],
-        })
+        data = data + e.ChildText(".entry_date") + text[englishStart:englishEnd] + "\n\n"
     })
 
     for i := 0; i < days; i++ {
@@ -43,12 +44,12 @@ func main () {
             fmt.Println(err)
         }
     }
+    fmt.Println(data)
 
-    err := config.LoadFiles("internal/config.json")
-    if err != nil {
-        fmt.Println(err)
-    }
-    fmt.Println(config.Get("APIKey"))
+    // Contact chatGPT
+    // req, err := http.NewRequest("POST", config.String("APIUrl"), data)
+    // req.Header.Add("Content-Type", "application/json")
+    // req.Header.Add("Authorization", config.String("APIKey"))
 }
 
 func amountOfDaysSince(date int) int {

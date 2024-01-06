@@ -6,6 +6,7 @@ import (
 	"strconv"
     "strings"
 	"time"
+    "github.com/gookit/config/v2"
 )
 
 type AvalancheData struct {
@@ -42,6 +43,12 @@ func main () {
             fmt.Println(err)
         }
     }
+
+    err := config.LoadFiles("internal/config.json")
+    if err != nil {
+        fmt.Println(err)
+    }
+    fmt.Println(config.Get("APIKey"))
 }
 
 func amountOfDaysSince(date int) int {

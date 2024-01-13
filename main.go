@@ -3,58 +3,49 @@ package main
 import (
     "fmt"
 	"github.com/gocolly/colly"
-	"strconv"
     "strings"
 	"time"
-    "github.com/gookit/config/v2"
-    // "net/http"
 )
-
-type Gptrequest struct {
-    Prompt string
-    Data string
-}
 
 func main () {
     fmt.Println("AvalancheScraper V0.1")
 
-    err := config.LoadFiles("config.json")
+    var data string
+
+    now, err := time.Parse("2006.01.02", time.Now().Format("2006.01.02"))
     if err != nil {
+        fmt.Println("ERROR:")
         fmt.Println(err)
+        panic(err)
     }
-    days := amountOfDaysSince(config.Int("days"))
-    baseUrl := config.String("baseUrl")
 
     c := colly.NewCollector()
 
-    var data string
-
     c.OnHTML(".entry", func(e *colly.HTMLElement) {
-        text := strings.ToLower(e.ChildText(".entry_body"))
-        englishStart := strings.Index(text, "mountain")
-        englishEnd := strings.Index(text, "tweet")
-        data = data + e.ChildText(".entry_date") + text[englishStart:englishEnd] + "\n\n"
-    })
-
-    for i := 0; i < days; i++ {
-        url := baseUrl + strconv.Itoa(i)
-        err := c.Visit(url)
+        dateStr := e.ChildText(".entry_date")
+        date, err := time.Parse("2006.01.02", dateStr[0:strings.Index(dateStr, " ")])
         if err != nil {
             fmt.Println("ERROR:")
             fmt.Println(err)
+            panic(err)
         }
+        if date.Equal(now) {
+            text := strings.ToLower(e.ChildText(".entry_body"))
+            englishStart := strings.Index(text, "mountain")
+            englishEnd := strings.Index(text, "tweet")
+            data = text[englishStart:englishEnd]
+        } else {
+            fmt.Println("Avalanche report has not been released for today yet")
+        }
+
+    })
+
+    baseUrl := "http://niseko.nadare.info"
+    err = c.Visit(baseUrl)
+    if err != nil {
+        fmt.Println("ERROR:")
+        fmt.Println(err)
     }
+
     fmt.Println(data)
-
-    // Contact chatGPT
-    // req, err := http.NewRequest("POST", config.String("APIUrl"), data)
-    // req.Header.Add("Content-Type", "application/json")
-    // req.Header.Add("Authorization", config.String("APIKey"))
-}
-
-func amountOfDaysSince(date int) int {
-    currentDate := time.Now()
-    fromDate := time.Date(2023, time.December, date, 0, 0, 0, 0, currentDate.Location())
-    duration := currentDate.Sub(fromDate)
-    return int(duration.Hours() / 24)
 }

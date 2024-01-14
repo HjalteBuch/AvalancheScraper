@@ -1,16 +1,15 @@
 package main
 
 import (
-    "fmt"
-	"github.com/gocolly/colly"
-    "strings"
+	"fmt"
+	"strings"
 	"time"
+
+	"github.com/gocolly/colly"
 )
 
 func main () {
     fmt.Println("AvalancheScraper V0.1")
-
-    var data string
 
     now, err := time.Parse("2006.01.02", time.Now().Format("2006.01.02"))
     if err != nil {
@@ -19,6 +18,12 @@ func main () {
         panic(err)
     }
 
+    avalancheReport := getAvalancheReport(now)
+    fmt.Println(avalancheReport)
+}
+
+func getAvalancheReport(now time.Time) string {
+    var data string
     c := colly.NewCollector()
 
     c.OnHTML(".entry", func(e *colly.HTMLElement) {
@@ -40,12 +45,11 @@ func main () {
 
     })
 
-    baseUrl := "http://niseko.nadare.info"
-    err = c.Visit(baseUrl)
+    err := c.Visit("http://niseko.nadare.info")
     if err != nil {
         fmt.Println("ERROR:")
         fmt.Println(err)
     }
 
-    fmt.Println(data)
+    return data
 }
